@@ -38969,6 +38969,21 @@ page-account-update form.submitted .item-md.item-input.ng-invalid.ng-untouched:n
   box-shadow: inset 0 -1px 0 0 orangered;
 }
 
+page-account-update .list-md .item-block.item-datetime.input-has-value .item-inner {
+  border-bottom: none;
+  box-shadow: none;
+  padding-right: 0;
+}
+
+page-account-update .list-md .item-label-stacked ion-datetime.ng-invalid {
+  border-bottom: 1px solid #dedede;
+}
+
+page-account-update .list-md .item-label-stacked ion-datetime.ng-valid {
+  border-bottom: 1px solid #32db64 !important;
+  box-shadow: inset 0 -1px 0 0 #32db64;
+}
+
 page-checkout .item.item-input.ng-valid.invalid.input-has-value:not(.input-has-focus) .item-inner,
 page-checkout .item.item-select.invalid:not(.input-has-focus) .item-inner,
 page-checkout .item.item-datetime.invalid.input-has-value:not(.input-has-focus) .item-inner,
