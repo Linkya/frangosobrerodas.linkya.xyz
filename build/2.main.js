@@ -15746,57 +15746,74 @@ var SettingsService = (function () {
         total = total / 1000;
         return total;
     };
-    SettingsService.prototype.getDistance = function (address) {
+    SettingsService.prototype.getDistance = function (postalCode) {
         var _this = this;
+        var address = postalCode;
+        var response = {
+            status: "",
+            valid: "",
+            distance: 0,
+            address: "",
+            locality: ""
+        };
         return new Promise(function (resolve, reject) {
             _this.getPath().then(function (data) {
                 var decodedPath = google.maps.geometry.encoding.decodePath(data);
                 var qt = { lat: 41.3354534, lng: -8.5601993 };
-                var response = {
-                    status: "",
-                    valid: "",
-                    distance: 0,
-                    address: "",
-                    locality: ""
-                };
                 var geocoder = new google.maps.Geocoder();
                 geocoder.geocode({ 'address': address }, function (results, status) {
-                    if (status == google.maps.GeocoderStatus.OK) {
-                        var request = {
-                            destination: results[0].geometry.location,
-                            origin: qt,
-                            travelMode: google.maps.TravelMode.DRIVING
-                        };
-                        var locality = results[0].address_components[1].long_name;
-                        var address = results[0].formatted_address;
-                        var directionsService = new google.maps.DirectionsService();
-                        directionsService.route(request, function (result, status) {
-                            if (status == google.maps.DirectionsStatus.OK) {
-                                var polygon = new google.maps.Polygon({ paths: decodedPath });
-                                response.valid = google.maps.geometry.poly.containsLocation(results[0].geometry.location, polygon);
-                                if (response.valid) {
-                                    for (var i = 0; i < result.routes[0].legs.length; i++) {
-                                        response.distance += result.routes[0].legs[i].distance.value;
+                    switch (status) {
+                        case google.maps.GeocoderStatus.OK:
+                            var request = {
+                                destination: results[0].geometry.location,
+                                origin: qt,
+                                travelMode: google.maps.TravelMode.DRIVING
+                            };
+                            var locality = results[0].address_components[1].long_name;
+                            var address = results[0].formatted_address;
+                            var directionsService = new google.maps.DirectionsService();
+                            directionsService.route(request, function (result, status) {
+                                if (status == google.maps.DirectionsStatus.OK) {
+                                    var polygon = new google.maps.Polygon({ paths: decodedPath });
+                                    response.valid = google.maps.geometry.poly.containsLocation(results[0].geometry.location, polygon);
+                                    if (response.valid) {
+                                        for (var i = 0; i < result.routes[0].legs.length; i++) {
+                                            response.distance += result.routes[0].legs[i].distance.value;
+                                        }
+                                        response.distance = response.distance / 1000;
                                     }
-                                    response.distance = response.distance / 1000;
+                                    response.status = "success";
+                                    response.address = address;
+                                    response.locality = locality;
+                                    resolve(response);
                                 }
-                                response.status = "success";
-                                response.address = address;
-                                response.locality = locality;
-                                // console.log(response.distance, response.address);
-                                resolve(response);
-                            }
-                            else {
-                                response.status = "error";
-                                reject(response);
-                            }
-                        });
-                    }
-                    else {
-                        response.status = "error";
-                        reject(response);
+                                else {
+                                    response.status = "error";
+                                    reject(response);
+                                }
+                            });
+                            break;
+                        case google.maps.GeocoderStatus.ZERO_RESULTS:
+                            response.status = "error";
+                            resolve(response);
+                            break;
+                        case google.maps.GeocoderStatus.ERROR:
+                            response.status = "error";
+                            reject(response);
+                            break;
+                        case google.maps.GeocoderStatus.OVER_QUERY_LIMIT:
+                            response.status = "over";
+                            reject(response);
+                            break;
+                        default:
+                            response.status = "error";
+                            reject(response);
+                            break;
                     }
                 });
+            }, function (error) {
+                response.status = "error";
+                reject(response);
             });
         });
     };
@@ -15805,9 +15822,10 @@ var SettingsService = (function () {
 }());
 SettingsService = __decorate([
     __webpack_require__.i(__WEBPACK_IMPORTED_MODULE_0__angular_core__["c" /* Injectable */])(),
-    __metadata("design:paramtypes", [__WEBPACK_IMPORTED_MODULE_1__angular_http__["d" /* Http */], __WEBPACK_IMPORTED_MODULE_2__user_service__["a" /* UserService */]])
+    __metadata("design:paramtypes", [typeof (_a = typeof __WEBPACK_IMPORTED_MODULE_1__angular_http__["d" /* Http */] !== "undefined" && __WEBPACK_IMPORTED_MODULE_1__angular_http__["d" /* Http */]) === "function" && _a || Object, typeof (_b = typeof __WEBPACK_IMPORTED_MODULE_2__user_service__["a" /* UserService */] !== "undefined" && __WEBPACK_IMPORTED_MODULE_2__user_service__["a" /* UserService */]) === "function" && _b || Object])
 ], SettingsService);
 
+var _a, _b;
 //# sourceMappingURL=settings-service.js.map
 
 /***/ }),
@@ -16334,9 +16352,10 @@ var OrderService = (function () {
 }());
 OrderService = __decorate([
     __webpack_require__.i(__WEBPACK_IMPORTED_MODULE_0__angular_core__["c" /* Injectable */])(),
-    __metadata("design:paramtypes", [__WEBPACK_IMPORTED_MODULE_1__angular_http__["d" /* Http */], __WEBPACK_IMPORTED_MODULE_2__user_service__["a" /* UserService */]])
+    __metadata("design:paramtypes", [typeof (_a = typeof __WEBPACK_IMPORTED_MODULE_1__angular_http__["d" /* Http */] !== "undefined" && __WEBPACK_IMPORTED_MODULE_1__angular_http__["d" /* Http */]) === "function" && _a || Object, typeof (_b = typeof __WEBPACK_IMPORTED_MODULE_2__user_service__["a" /* UserService */] !== "undefined" && __WEBPACK_IMPORTED_MODULE_2__user_service__["a" /* UserService */]) === "function" && _b || Object])
 ], OrderService);
 
+var _a, _b;
 //# sourceMappingURL=order-service.js.map
 
 /***/ }),
@@ -16376,7 +16395,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 
 
 var CheckoutPage = (function () {
-    function CheckoutPage(popoverCtrl, navCtrl, navParams, alertCtrl, settingsService, cartService, orderService, userService) {
+    function CheckoutPage(popoverCtrl, navCtrl, navParams, alertCtrl, settingsService, cartService, orderService, userService, loadingCtrl) {
         this.popoverCtrl = popoverCtrl;
         this.navCtrl = navCtrl;
         this.navParams = navParams;
@@ -16385,6 +16404,7 @@ var CheckoutPage = (function () {
         this.cartService = cartService;
         this.orderService = orderService;
         this.userService = userService;
+        this.loadingCtrl = loadingCtrl;
         this.order = new __WEBPACK_IMPORTED_MODULE_2__providers_cart_service__["a" /* Order */]();
         this.submitted = false;
         this.myAddress = false;
@@ -16459,13 +16479,18 @@ var CheckoutPage = (function () {
             this.paymentMethodValidation.valid = false;
         }
         if (form.valid && this.postalCodeValidation.valid && this.hourValidation.valid) {
-            this.orderService.create(this.order).then(function (data) {
-                var cart = new __WEBPACK_IMPORTED_MODULE_2__providers_cart_service__["c" /* Cart */]();
-                _this.cartService.set(cart);
-                _this.alert("Sucesso", "Encomenda criada com sucesso");
-                _this.navCtrl.setRoot('OrderPage');
-            }, function (error) {
-                _this.alert("Erro", "Ocorreu um erro a criar a encomenda.");
+            this.loading = this.loadingCtrl.create();
+            this.loading.present().then(function () {
+                _this.orderService.create(_this.order).then(function (data) {
+                    var cart = new __WEBPACK_IMPORTED_MODULE_2__providers_cart_service__["c" /* Cart */]();
+                    _this.cartService.set(cart);
+                    _this.loading.dismiss();
+                    _this.alert("Sucesso", "Encomenda criada com sucesso");
+                    _this.navCtrl.setRoot('OrderPage');
+                }, function (error) {
+                    _this.loading.dismiss();
+                    _this.alert("Erro", "Ocorreu um erro a criar a encomenda.");
+                });
             });
         }
         this.submitted = true;
@@ -16489,19 +16514,20 @@ var CheckoutPage = (function () {
     };
     CheckoutPage.prototype.checkLocation = function (postal_code) {
         var _this = this;
-        if (postal_code.length == 8) {
+        if (postal_code && postal_code.length == 8) {
             this.postalCodeValidation.spinner = true;
             this.settingsService.getDistance(postal_code).then(function (data) {
                 if (data.status == "success") {
                     _this.order.locality = data.address;
                     if (data.valid) {
                         _this.postalCodeValidation.valid = true;
-                        _this.postalCodeValidation.message = data.address;
+                        _this.postalCodeValidation.message = data.address + ' - ' + data.distance + 'km';
                         _this.order.locality = data.locality;
                     }
                     else {
                         _this.postalCodeValidation.valid = false;
-                        _this.postalCodeValidation.message = data.address + " Não se encontra dentro do nosso raio de entrega. Consulte o nosso mapa para mais informações.";
+                        _this.postalCodeValidation.message = data.address;
+                        _this.alertPostalCode("Código postal inválido", "Este código postal não se encontra dentro do nosso raio de entrega. Consulte o nosso mapa para mais informações.");
                     }
                 }
                 else {
@@ -16510,15 +16536,42 @@ var CheckoutPage = (function () {
                 }
                 _this.postalCodeValidation.spinner = false;
             }, function (error) {
-                _this.postalCodeValidation.valid = false;
-                _this.postalCodeValidation.spinner = false;
-                _this.postalCodeValidation.message = "Ocorreu um erro a calcular.";
+                if (error.status == "over") {
+                    setTimeout(function () {
+                        _this.checkLocation(postal_code);
+                    }, 1000);
+                }
+                else {
+                    _this.postalCodeValidation.valid = false;
+                    _this.postalCodeValidation.spinner = false;
+                    _this.postalCodeValidation.message = "Ocorreu um erro a calcular.";
+                }
             });
         }
         else {
             this.order.locality = '';
             this.postalCodeValidation.message = '';
         }
+    };
+    CheckoutPage.prototype.alertPostalCode = function (title, subtitle) {
+        var _this = this;
+        var alert = this.alertCtrl.create({
+            title: title,
+            subTitle: subtitle
+        });
+        alert.addButton({
+            text: 'Ver mapa',
+            handler: function (data) {
+                _this.navCtrl.pop();
+                _this.navCtrl.push('MapPage');
+            }
+        });
+        alert.addButton({
+            text: 'Alterar morada',
+            handler: function (data) {
+            }
+        });
+        alert.present();
     };
     CheckoutPage.prototype.changePaymentMethod = function (payment_method_id) {
         var paymentMethod = this.paymentMethods.find(function (p) { return p.id === payment_method_id; });
@@ -16541,7 +16594,15 @@ var CheckoutPage = (function () {
         var res = false;
         var now = __WEBPACK_IMPORTED_MODULE_6_moment__();
         this.openingTimes.forEach(function (openingTime) {
-            if (date >= __WEBPACK_IMPORTED_MODULE_6_moment__(openingTime.interval_start, 'HH:mm') && date <= __WEBPACK_IMPORTED_MODULE_6_moment__(openingTime.interval_end, 'HH:mm') && date >= now) {
+            var start = __WEBPACK_IMPORTED_MODULE_6_moment__(openingTime.interval_start, 'HH:mm');
+            var end = __WEBPACK_IMPORTED_MODULE_6_moment__(openingTime.interval_end, 'HH:mm');
+            if (end < start) {
+                end.add(1, 'day');
+                if (date < start && date <= end) {
+                    date.add(1, 'day');
+                }
+            }
+            if (date >= start && date <= end && date >= now) {
                 res = true;
             }
         });
@@ -16560,12 +16621,13 @@ var CheckoutPage = (function () {
 CheckoutPage = __decorate([
     __webpack_require__.i(__WEBPACK_IMPORTED_MODULE_5_ionic_angular__["g" /* IonicPage */])(),
     __webpack_require__.i(__WEBPACK_IMPORTED_MODULE_0__angular_core__["_5" /* Component */])({
-        selector: 'page-checkout',template:/*ion-inline-start:"C:\Users\someb\Documents\Sites\fsr-takeaway\src\pages\checkout\checkout.html"*/'<ion-header>\n\n	<ion-navbar>\n\n		<ion-title>Finalizar encomenda</ion-title>\n\n	</ion-navbar>\n\n</ion-header>\n\n\n\n<ion-content padding>\n\n	<ion-row *ngFor="let item of cart.items" padding-left padding-right>\n\n		<ion-col col-md-6 col-lg-8 no-padding>\n\n			<p no-margin>{{item.name}}</p>\n\n			<p no-margin style="font-size: 11px">{{item.measure_name}}</p>\n\n		</ion-col>\n\n		<ion-col col-md-6 col-lg-4 text-right no-padding>\n\n			<ion-row>\n\n				<ion-col col-6>\n\n					<p no-margin>{{item.quantity }}</p>\n\n				</ion-col>\n\n				<ion-col col-6>\n\n					<p no-margin>{{item.quantity * item.price | number:\'1.2-2\' }} €</p>\n\n				</ion-col>\n\n			</ion-row>\n\n		</ion-col>\n\n	</ion-row>\n\n	<ion-row padding>\n\n		<ion-col col-md-6 col-lg-8 no-padding>\n\n		</ion-col>\n\n		<ion-col col-md-6 col-lg-4 text-right no-padding>\n\n			<ion-row>\n\n				<ion-col col-6>\n\n					<p no-margin>Sub-total:</p>\n\n				</ion-col>\n\n				<ion-col col-6>\n\n					<p no-margin>{{order.sub_total | number:\'1.2-2\'}} €</p>\n\n				</ion-col>\n\n			</ion-row>\n\n			<ion-row>\n\n				<ion-col col-6>\n\n					<p no-margin>Taxa:</p>\n\n				</ion-col>\n\n				<ion-col col-6>\n\n					<p no-margin>{{order.fee | number:\'1.2-2\'}} €</p>\n\n				</ion-col>\n\n			</ion-row>\n\n			<ion-row>\n\n				<ion-col col-6>\n\n					<p no-margin>Total:</p>\n\n				</ion-col>\n\n				<ion-col col-6>\n\n					<p no-margin>{{order.total | number:\'1.2-2\'}} €</p>\n\n				</ion-col>\n\n			</ion-row>\n\n		</ion-col>\n\n	</ion-row>\n\n	<form #checkoutForm="ngForm" novalidate [ngClass]="{\'submitted\': submitted}">\n\n		<ion-list>\n\n			<div *ngIf="order.local == \'Domícilio\'">\n\n				<ion-item padding-bottom no-lines>\n\n					<ion-label stacked color="primary">Minha morada</ion-label>\n\n					<ion-toggle [(ngModel)]="myAddress" name="myAddress" (ngModelChange)="changeUserAddress()"></ion-toggle>\n\n				</ion-item>\n\n				<ion-item>\n\n					<ion-label stacked color="primary">Morada</ion-label>\n\n					<ion-input [(ngModel)]="order.address" name="address" type="text" #address="ngModel" required>\n\n					</ion-input>\n\n				</ion-item>\n\n				<ion-item [ngClass]="{\'invalid\': !postalCodeValidation.valid}">\n\n					<ion-label stacked color="primary">Código Postal</ion-label>\n\n					<ion-input [(ngModel)]="order.postal_code" (ngModelChange)="checkLocation(order.postal_code, postalCode)"  [minlength]="8" [maxlength]="8" name="postal_code"  pattern="^\\d{4}-\\d{3}$" max="8" type="text" #postalCode="ngModel" required>\n\n					</ion-input>\n\n				</ion-item>\n\n				<ion-spinner [hidden]="!postalCodeValidation.spinner" margin-left></ion-spinner>\n\n				<p padding-left [hidden]="!postalCodeValidation.message">\n\n					<ion-icon name=\'alert\' [hidden]="postalCodeValidation.valid"></ion-icon> \n\n					{{postalCodeValidation.message}}\n\n				</p>\n\n			</div>\n\n			<!--<ion-item>\n\n				<ion-label stacked color="primary">\n\n					Dia		\n\n					<p style="font-size: 16px; padding-top: 10px; padding-bottom: 5px">{{order.date | date: \'dd/MM/y\'}}</p>		\n\n				</ion-label>\n\n			</ion-item>-->\n\n			<ion-item [ngClass]="{\'invalid\': !hourValidation.valid}">\n\n				<ion-label stacked color="primary">\n\n					Hora			\n\n					<button ion-button rounded icon-only (click)="presentPopover($event)" style="z-index: 1500; position: absolute; right: 16px">\n\n						<ion-icon name="information"></ion-icon>\n\n					</button>\n\n				</ion-label>\n\n				<ion-datetime [(ngModel)]="order.hour" (ngModelChange)="checkHour(order.hour)" name="hour" #hour="ngModel"  pickerFormat="HH:mm" displayFormat="HH:mm" minuteValues="0,15,30,45" hourValues="{{hoursValue}}" required></ion-datetime>\n\n			</ion-item>\n\n			<p padding-left [hidden]="hourValidation.valid">\n\n				<ion-icon name=\'alert\'></ion-icon> \n\n				Hora inválida\n\n			</p>\n\n			<ion-item [ngClass]="{\'invalid\': !paymentMethodValidation.valid}">\n\n				<ion-label stacked color="primary">Método de Pagamento</ion-label>\n\n				<ion-select [(ngModel)]="order.payment_method_id"  (ngModelChange)="changePaymentMethod(order.payment_method_id)" name="payment_method_id" #paymentMethod="ngModel" required>\n\n					<ion-option *ngFor="let paymentMethod of paymentMethods" [value]="paymentMethod.id">{{paymentMethod.name}}</ion-option>\n\n				</ion-select>\n\n			</ion-item>\n\n			<ion-item [hidden]="paymentValidation.hide" [ngClass]="{\'invalid\': !paymentValidation.valid}">\n\n				<ion-label stacked color="primary">Quantia de entrega <span style="font-size: 10px">(se necessário troco)</span></ion-label>\n\n				<ion-input [(ngModel)]="order.payment" name="payment" type="number" #payment="ngModel" (ngModelChange)="changePayment(order.payment)">\n\n				</ion-input>\n\n			</ion-item>\n\n			<ion-item>\n\n				<ion-label stacked color="primary">NIF <span style="font-size: 10px">(opcional)</span></ion-label>\n\n				<ion-input [(ngModel)]="order.nif" name="nif" type="number" #nif="ngModel">\n\n				</ion-input>\n\n			</ion-item>\n\n			<p ion-text [hidden]="true" color="danger" padding-left></p>\n\n		</ion-list>\n\n\n\n		<div padding>\n\n			<button [disabled]="!checkoutForm.valid || !postalCodeValidation.valid || !hourValidation.valid || !paymentMethodValidation.valid || !paymentValidation.valid" ion-button (click)="onCheckout(checkoutForm)" type="submit" block>Finalizar</button>\n\n		</div>\n\n	</form>\n\n</ion-content>\n\n'/*ion-inline-end:"C:\Users\someb\Documents\Sites\fsr-takeaway\src\pages\checkout\checkout.html"*/,
+        selector: 'page-checkout',template:/*ion-inline-start:"C:\Users\someb\Documents\Sites\fsr-takeaway\src\pages\checkout\checkout.html"*/'<ion-header>\n\n	<ion-navbar>\n\n		<ion-title>Finalizar encomenda</ion-title>\n\n	</ion-navbar>\n\n</ion-header>\n\n\n\n<ion-content padding>\n\n	<ion-row *ngFor="let item of cart.items" padding-left padding-right>\n\n		<ion-col col-md-6 col-lg-8 no-padding>\n\n			<p no-margin>{{item.name}}</p>\n\n			<p no-margin style="font-size: 11px">{{item.measure_name}}</p>\n\n		</ion-col>\n\n		<ion-col col-md-6 col-lg-4 text-right no-padding>\n\n			<ion-row>\n\n				<ion-col col-6>\n\n					<p no-margin>{{item.quantity }}</p>\n\n				</ion-col>\n\n				<ion-col col-6>\n\n					<p no-margin>{{item.quantity * item.price | number:\'1.2-2\' }} €</p>\n\n				</ion-col>\n\n			</ion-row>\n\n		</ion-col>\n\n	</ion-row>\n\n	<ion-row padding>\n\n		<ion-col col-md-6 col-lg-8 no-padding>\n\n		</ion-col>\n\n		<ion-col col-md-6 col-lg-4 text-right no-padding>\n\n			<ion-row>\n\n				<ion-col col-6>\n\n					<p no-margin>Sub-total:</p>\n\n				</ion-col>\n\n				<ion-col col-6>\n\n					<p no-margin>{{order.sub_total | number:\'1.2-2\'}} €</p>\n\n				</ion-col>\n\n			</ion-row>\n\n			<ion-row>\n\n				<ion-col col-6>\n\n					<p no-margin>Taxa:</p>\n\n				</ion-col>\n\n				<ion-col col-6>\n\n					<p no-margin>{{order.fee | number:\'1.2-2\'}} €</p>\n\n				</ion-col>\n\n			</ion-row>\n\n			<ion-row>\n\n				<ion-col col-6>\n\n					<p no-margin>Total:</p>\n\n				</ion-col>\n\n				<ion-col col-6>\n\n					<p no-margin>{{order.total | number:\'1.2-2\'}} €</p>\n\n				</ion-col>\n\n			</ion-row>\n\n		</ion-col>\n\n	</ion-row>\n\n	<form #checkoutForm="ngForm" novalidate [ngClass]="{\'submitted\': submitted}">\n\n		<ion-list>\n\n			<div *ngIf="order.local == \'Domícilio\'">\n\n				<ion-item padding-bottom no-lines>\n\n					<ion-label stacked color="primary">Minha morada</ion-label>\n\n					<ion-toggle [(ngModel)]="myAddress" name="myAddress" (ngModelChange)="changeUserAddress()"></ion-toggle>\n\n				</ion-item>\n\n				<ion-item>\n\n					<ion-label stacked color="primary">Morada</ion-label>\n\n					<ion-input [(ngModel)]="order.address" name="address" type="text" #address="ngModel" required>\n\n					</ion-input>\n\n				</ion-item>\n\n				<ion-item [ngClass]="{\'invalid\': !postalCodeValidation.valid}">\n\n					<ion-label stacked color="primary">Código Postal</ion-label>\n\n					<ion-input [(ngModel)]="order.postal_code" (ngModelChange)="checkLocation(order.postal_code, postalCode)"  [minlength]="8" [maxlength]="8" name="postal_code"  pattern="^\\d{4}-\\d{3}$" max="8" type="text" #postalCode="ngModel" required>\n\n					</ion-input>\n\n				</ion-item>\n\n				<ion-spinner [hidden]="!postalCodeValidation.spinner" margin-left></ion-spinner>\n\n				<p padding-left [hidden]="!postalCodeValidation.message">\n\n					<ion-icon name=\'alert\' [hidden]="postalCodeValidation.valid"></ion-icon> \n\n					{{postalCodeValidation.message}}\n\n					<ion-icon name=\'refresh\' [hidden]="postalCodeValidation.message != \'Ocorreu um erro a calcular.\'" (click)="checkLocation(order.postal_code)"></ion-icon> \n\n				</p>\n\n			</div>\n\n			<!--<ion-item>\n\n				<ion-label stacked color="primary">\n\n					Dia		\n\n					<p style="font-size: 16px; padding-top: 10px; padding-bottom: 5px">{{order.date | date: \'dd/MM/y\'}}</p>		\n\n				</ion-label>\n\n			</ion-item>-->\n\n			<ion-item [ngClass]="{\'invalid\': !hourValidation.valid}">\n\n				<ion-label stacked color="primary">\n\n					Hora			\n\n					<button ion-button rounded icon-only (click)="presentPopover($event)" style="z-index: 1500; position: absolute; right: 16px">\n\n						<ion-icon name="information"></ion-icon>\n\n					</button>\n\n				</ion-label>\n\n				<ion-datetime [(ngModel)]="order.hour" (ngModelChange)="checkHour(order.hour)" name="hour" #hour="ngModel"  pickerFormat="HH:mm" displayFormat="HH:mm" minuteValues="0,15,30,45" hourValues="{{hoursValue}}" required></ion-datetime>\n\n			</ion-item>\n\n			<p padding-left [hidden]="hourValidation.valid">\n\n				<ion-icon name=\'alert\'></ion-icon> \n\n				Hora inválida\n\n			</p>\n\n			<ion-item [ngClass]="{\'invalid\': !paymentMethodValidation.valid}">\n\n				<ion-label stacked color="primary">Método de Pagamento</ion-label>\n\n				<ion-select [(ngModel)]="order.payment_method_id"  (ngModelChange)="changePaymentMethod(order.payment_method_id)" name="payment_method_id" #paymentMethod="ngModel" required>\n\n					<ion-option *ngFor="let paymentMethod of paymentMethods" [value]="paymentMethod.id">{{paymentMethod.name}}</ion-option>\n\n				</ion-select>\n\n			</ion-item>\n\n			<ion-item [hidden]="paymentValidation.hide" [ngClass]="{\'invalid\': !paymentValidation.valid}">\n\n				<ion-label stacked color="primary">Quantia de entrega <span style="font-size: 10px">(se necessário troco)</span></ion-label>\n\n				<ion-input [(ngModel)]="order.payment" name="payment" type="number" #payment="ngModel" (ngModelChange)="changePayment(order.payment)">\n\n				</ion-input>\n\n			</ion-item>\n\n			<ion-item>\n\n				<ion-label stacked color="primary">NIF <span style="font-size: 10px">(opcional)</span></ion-label>\n\n				<ion-input [(ngModel)]="order.nif" name="nif" type="number" #nif="ngModel">\n\n				</ion-input>\n\n			</ion-item>\n\n			<ion-item>\n\n				<ion-label stacked color="primary">Nota <span style="font-size: 10px">(opcional)</span></ion-label>\n\n				<ion-input [(ngModel)]="order.note" name="note" type="text" #note="ngModel">\n\n				</ion-input>\n\n			</ion-item>\n\n			<p ion-text [hidden]="true" color="danger" padding-left></p>\n\n		</ion-list>\n\n\n\n		<div padding>\n\n			<button [disabled]="!checkoutForm.valid || !postalCodeValidation.valid || !hourValidation.valid || !paymentMethodValidation.valid || !paymentValidation.valid" ion-button (click)="onCheckout(checkoutForm)" type="submit" block>Finalizar</button>\n\n		</div>\n\n	</form>\n\n</ion-content>\n\n'/*ion-inline-end:"C:\Users\someb\Documents\Sites\fsr-takeaway\src\pages\checkout\checkout.html"*/,
         providers: [__WEBPACK_IMPORTED_MODULE_2__providers_cart_service__["b" /* CartService */], __WEBPACK_IMPORTED_MODULE_3__providers_settings_service__["a" /* SettingsService */], __WEBPACK_IMPORTED_MODULE_4__providers_order_service__["a" /* OrderService */], __WEBPACK_IMPORTED_MODULE_1__providers_user_service__["a" /* UserService */]]
     }),
-    __metadata("design:paramtypes", [__WEBPACK_IMPORTED_MODULE_5_ionic_angular__["s" /* PopoverController */], __WEBPACK_IMPORTED_MODULE_5_ionic_angular__["h" /* NavController */], __WEBPACK_IMPORTED_MODULE_5_ionic_angular__["k" /* NavParams */], __WEBPACK_IMPORTED_MODULE_5_ionic_angular__["j" /* AlertController */], __WEBPACK_IMPORTED_MODULE_3__providers_settings_service__["a" /* SettingsService */], __WEBPACK_IMPORTED_MODULE_2__providers_cart_service__["b" /* CartService */], __WEBPACK_IMPORTED_MODULE_4__providers_order_service__["a" /* OrderService */], __WEBPACK_IMPORTED_MODULE_1__providers_user_service__["a" /* UserService */]])
+    __metadata("design:paramtypes", [typeof (_a = typeof __WEBPACK_IMPORTED_MODULE_5_ionic_angular__["s" /* PopoverController */] !== "undefined" && __WEBPACK_IMPORTED_MODULE_5_ionic_angular__["s" /* PopoverController */]) === "function" && _a || Object, typeof (_b = typeof __WEBPACK_IMPORTED_MODULE_5_ionic_angular__["h" /* NavController */] !== "undefined" && __WEBPACK_IMPORTED_MODULE_5_ionic_angular__["h" /* NavController */]) === "function" && _b || Object, typeof (_c = typeof __WEBPACK_IMPORTED_MODULE_5_ionic_angular__["k" /* NavParams */] !== "undefined" && __WEBPACK_IMPORTED_MODULE_5_ionic_angular__["k" /* NavParams */]) === "function" && _c || Object, typeof (_d = typeof __WEBPACK_IMPORTED_MODULE_5_ionic_angular__["j" /* AlertController */] !== "undefined" && __WEBPACK_IMPORTED_MODULE_5_ionic_angular__["j" /* AlertController */]) === "function" && _d || Object, typeof (_e = typeof __WEBPACK_IMPORTED_MODULE_3__providers_settings_service__["a" /* SettingsService */] !== "undefined" && __WEBPACK_IMPORTED_MODULE_3__providers_settings_service__["a" /* SettingsService */]) === "function" && _e || Object, typeof (_f = typeof __WEBPACK_IMPORTED_MODULE_2__providers_cart_service__["b" /* CartService */] !== "undefined" && __WEBPACK_IMPORTED_MODULE_2__providers_cart_service__["b" /* CartService */]) === "function" && _f || Object, typeof (_g = typeof __WEBPACK_IMPORTED_MODULE_4__providers_order_service__["a" /* OrderService */] !== "undefined" && __WEBPACK_IMPORTED_MODULE_4__providers_order_service__["a" /* OrderService */]) === "function" && _g || Object, typeof (_h = typeof __WEBPACK_IMPORTED_MODULE_1__providers_user_service__["a" /* UserService */] !== "undefined" && __WEBPACK_IMPORTED_MODULE_1__providers_user_service__["a" /* UserService */]) === "function" && _h || Object, typeof (_j = typeof __WEBPACK_IMPORTED_MODULE_5_ionic_angular__["m" /* LoadingController */] !== "undefined" && __WEBPACK_IMPORTED_MODULE_5_ionic_angular__["m" /* LoadingController */]) === "function" && _j || Object])
 ], CheckoutPage);
 
+var _a, _b, _c, _d, _e, _f, _g, _h, _j;
 //# sourceMappingURL=checkout.js.map
 
 /***/ })

@@ -15754,57 +15754,74 @@ var SettingsService = (function () {
         total = total / 1000;
         return total;
     };
-    SettingsService.prototype.getDistance = function (address) {
+    SettingsService.prototype.getDistance = function (postalCode) {
         var _this = this;
+        var address = postalCode;
+        var response = {
+            status: "",
+            valid: "",
+            distance: 0,
+            address: "",
+            locality: ""
+        };
         return new Promise(function (resolve, reject) {
             _this.getPath().then(function (data) {
                 var decodedPath = google.maps.geometry.encoding.decodePath(data);
                 var qt = { lat: 41.3354534, lng: -8.5601993 };
-                var response = {
-                    status: "",
-                    valid: "",
-                    distance: 0,
-                    address: "",
-                    locality: ""
-                };
                 var geocoder = new google.maps.Geocoder();
                 geocoder.geocode({ 'address': address }, function (results, status) {
-                    if (status == google.maps.GeocoderStatus.OK) {
-                        var request = {
-                            destination: results[0].geometry.location,
-                            origin: qt,
-                            travelMode: google.maps.TravelMode.DRIVING
-                        };
-                        var locality = results[0].address_components[1].long_name;
-                        var address = results[0].formatted_address;
-                        var directionsService = new google.maps.DirectionsService();
-                        directionsService.route(request, function (result, status) {
-                            if (status == google.maps.DirectionsStatus.OK) {
-                                var polygon = new google.maps.Polygon({ paths: decodedPath });
-                                response.valid = google.maps.geometry.poly.containsLocation(results[0].geometry.location, polygon);
-                                if (response.valid) {
-                                    for (var i = 0; i < result.routes[0].legs.length; i++) {
-                                        response.distance += result.routes[0].legs[i].distance.value;
+                    switch (status) {
+                        case google.maps.GeocoderStatus.OK:
+                            var request = {
+                                destination: results[0].geometry.location,
+                                origin: qt,
+                                travelMode: google.maps.TravelMode.DRIVING
+                            };
+                            var locality = results[0].address_components[1].long_name;
+                            var address = results[0].formatted_address;
+                            var directionsService = new google.maps.DirectionsService();
+                            directionsService.route(request, function (result, status) {
+                                if (status == google.maps.DirectionsStatus.OK) {
+                                    var polygon = new google.maps.Polygon({ paths: decodedPath });
+                                    response.valid = google.maps.geometry.poly.containsLocation(results[0].geometry.location, polygon);
+                                    if (response.valid) {
+                                        for (var i = 0; i < result.routes[0].legs.length; i++) {
+                                            response.distance += result.routes[0].legs[i].distance.value;
+                                        }
+                                        response.distance = response.distance / 1000;
                                     }
-                                    response.distance = response.distance / 1000;
+                                    response.status = "success";
+                                    response.address = address;
+                                    response.locality = locality;
+                                    resolve(response);
                                 }
-                                response.status = "success";
-                                response.address = address;
-                                response.locality = locality;
-                                // console.log(response.distance, response.address);
-                                resolve(response);
-                            }
-                            else {
-                                response.status = "error";
-                                reject(response);
-                            }
-                        });
-                    }
-                    else {
-                        response.status = "error";
-                        reject(response);
+                                else {
+                                    response.status = "error";
+                                    reject(response);
+                                }
+                            });
+                            break;
+                        case google.maps.GeocoderStatus.ZERO_RESULTS:
+                            response.status = "error";
+                            resolve(response);
+                            break;
+                        case google.maps.GeocoderStatus.ERROR:
+                            response.status = "error";
+                            reject(response);
+                            break;
+                        case google.maps.GeocoderStatus.OVER_QUERY_LIMIT:
+                            response.status = "over";
+                            reject(response);
+                            break;
+                        default:
+                            response.status = "error";
+                            reject(response);
+                            break;
                     }
                 });
+            }, function (error) {
+                response.status = "error";
+                reject(response);
             });
         });
     };
@@ -15813,9 +15830,10 @@ var SettingsService = (function () {
 }());
 SettingsService = __decorate([
     __webpack_require__.i(__WEBPACK_IMPORTED_MODULE_0__angular_core__["c" /* Injectable */])(),
-    __metadata("design:paramtypes", [__WEBPACK_IMPORTED_MODULE_1__angular_http__["d" /* Http */], __WEBPACK_IMPORTED_MODULE_2__user_service__["a" /* UserService */]])
+    __metadata("design:paramtypes", [typeof (_a = typeof __WEBPACK_IMPORTED_MODULE_1__angular_http__["d" /* Http */] !== "undefined" && __WEBPACK_IMPORTED_MODULE_1__angular_http__["d" /* Http */]) === "function" && _a || Object, typeof (_b = typeof __WEBPACK_IMPORTED_MODULE_2__user_service__["a" /* UserService */] !== "undefined" && __WEBPACK_IMPORTED_MODULE_2__user_service__["a" /* UserService */]) === "function" && _b || Object])
 ], SettingsService);
 
+var _a, _b;
 //# sourceMappingURL=settings-service.js.map
 
 /***/ }),
