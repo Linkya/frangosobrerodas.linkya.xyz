@@ -205,7 +205,7 @@ var SettingsService = (function () {
         return new Promise(function (resolve, reject) {
             _this.getPath().then(function (data) {
                 var decodedPath = google.maps.geometry.encoding.decodePath(data);
-                var qt = { lat: 41.3354534, lng: -8.5601993 };
+                var qt = { lat: 41.1294944, lng: -8.6198778 };
                 var geocoder = new google.maps.Geocoder();
                 geocoder.geocode({ 'address': address }, function (results, status) {
                     switch (status) {
@@ -268,10 +268,9 @@ var SettingsService = (function () {
 }());
 SettingsService = __decorate([
     __webpack_require__.i(__WEBPACK_IMPORTED_MODULE_0__angular_core__["c" /* Injectable */])(),
-    __metadata("design:paramtypes", [typeof (_a = typeof __WEBPACK_IMPORTED_MODULE_1__angular_http__["d" /* Http */] !== "undefined" && __WEBPACK_IMPORTED_MODULE_1__angular_http__["d" /* Http */]) === "function" && _a || Object, typeof (_b = typeof __WEBPACK_IMPORTED_MODULE_2__user_service__["a" /* UserService */] !== "undefined" && __WEBPACK_IMPORTED_MODULE_2__user_service__["a" /* UserService */]) === "function" && _b || Object])
+    __metadata("design:paramtypes", [__WEBPACK_IMPORTED_MODULE_1__angular_http__["d" /* Http */], __WEBPACK_IMPORTED_MODULE_2__user_service__["a" /* UserService */]])
 ], SettingsService);
 
-var _a, _b;
 //# sourceMappingURL=settings-service.js.map
 
 /***/ }),
